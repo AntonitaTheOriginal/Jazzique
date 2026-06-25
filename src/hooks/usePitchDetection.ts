@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { PitchDetectionService } from '../services/pitchDetection';
-import type { DetectedNote } from '../types';
+import type { DetectedNote, Instrument } from '../types';
 
 export function usePitchDetection() {
   const [notes, setNotes] = useState<DetectedNote[]>([]);
   const [currentNote, setCurrentNote] = useState<DetectedNote | null>(null);
   const [freqData, setFreqData] = useState<Float32Array | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const [isCalibrating, setIsCalibrating] = useState(false);
+  const [noiseFloor, setNoiseFloor] = useState(0.01);
   const serviceRef = useRef<PitchDetectionService | null>(null);
 
   const lastNoteRef = useRef<string>('');
@@ -14,9 +16,9 @@ export function usePitchDetection() {
   const noteHistoryRef = useRef<string[]>([]);
   const stableNoteRef = useRef<string>('');
 
-  const start = useCallback(async (input: MediaStream | HTMLAudioElement) => {
+  const start = useCallback(async (input: MediaStream | HTMLAudioElement, instrument: Instrument = 'generic') => {
     serviceRef.current = new PitchDetectionService();
-    await serviceRef.current.initialize(input);
+    await serviceRef.current.initialize(input, instrument);
 
     serviceRef.current.start(
       (note) => {
@@ -72,7 +74,43 @@ export function usePitchDetection() {
     stableNoteRef.current = '';
   }, []);
 
+  const calibrate = useCallback(() => {
+    if (!serviceRef.current) return;
+    setIsCalibrating(true);
+    serviceRef.current.startCalibration((floor) => {
+      setNoiseFloor(floor);
+      setIsCalibrating(false);
+    });
+  }, []);
+
+  const setInstrument = useCallback((instrument: Instrument) => {
+    serviceRef.current?.setInstrumentFilter(instrument);
+  }, []);
+
+  const triggerNote = useCallback((note: DetectedNote) => {
+    setCurrentNote(note);
+    const noteKey = `${note.note}${note.octave}`;
+    if (noteKey !== lastNoteRef.current || note.timestamp - lastTimeRef.current > 0.3) {
+      lastNoteRef.current = noteKey;
+      lastTimeRef.current = note.timestamp;
+      setNotes(prev => [...prev.slice(-99), note]);
+    }
+  }, []);
+
   useEffect(() => () => { serviceRef.current?.stop(); }, []);
 
-  return { notes, currentNote, freqData, isActive, start, stop, clearNotes };
+  return {
+    notes,
+    currentNote,
+    freqData,
+    isActive,
+    isCalibrating,
+    noiseFloor,
+    start,
+    stop,
+    clearNotes,
+    calibrate,
+    setInstrument,
+    triggerNote
+  };
 }

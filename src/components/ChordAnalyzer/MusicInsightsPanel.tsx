@@ -24,14 +24,26 @@ export default function MusicInsightsPanel({ insights, hasNotes }: MusicInsights
       ) : (
         <div className="space-y-5">
           {/* Key & Scale */}
-          <div className="p-4 rounded-xl" style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.12)' }}>
-            <div className="flex items-center gap-2 mb-2">
+          <div className="p-4 rounded-xl space-y-3" style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.12)' }}>
+            <div className="flex items-center gap-2">
               <Music size={14} style={{ color: '#C9A84C' }} />
               <span className="text-xs uppercase tracking-widest" style={{ color: '#6A6458' }}>Key & Scale</span>
             </div>
             <p className="text-sm" style={{ color: '#C0B090' }}>
               This melody strongly resembles a <span style={{ color: '#C9A84C' }}>{insights.scale}</span> scale.
             </p>
+            {insights.scaleSuggestions && insights.scaleSuggestions.length > 0 && (
+              <div className="pt-2 border-t border-white/5 space-y-1.5">
+                <span className="text-[10px] uppercase tracking-wider block" style={{ color: '#6A6458' }}>Recommended Improvisation Scales:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {insights.scaleSuggestions.map((scale, sIdx) => (
+                    <span key={sIdx} className="text-xs px-2 py-0.5 rounded bg-zinc-950/40 text-gold-light border border-white/5">
+                      {scale}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Chord progression */}

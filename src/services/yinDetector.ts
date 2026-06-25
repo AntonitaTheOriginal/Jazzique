@@ -48,12 +48,12 @@ export class YinDetector {
    * @param rawBuffer The raw time-domain audio samples.
    * @returns An object containing the frequency in Hz and the confidence score.
    */
-  public detect(rawBuffer: Float32Array): { frequency: number; confidence: number } {
+  public detect(rawBuffer: Float32Array): { frequency: number; confidence: number; cents: number } {
     const rms = this.calculateRms(rawBuffer);
     
     // Silence threshold: If the signal energy is too quiet, do not attempt to detect
     if (rms < 0.01) {
-      return { frequency: -1, confidence: 0 };
+      return { frequency: -1, confidence: 0, cents: 0 };
     }
 
     const buffer = this.preprocess(rawBuffer);
@@ -106,7 +106,7 @@ export class YinDetector {
 
     // If the best minimum is still too noisy (high error), declare unvoiced
     if (minVal > 0.4) {
-      return { frequency: -1, confidence: 0 };
+      return { frequency: -1, confidence: 0, cents: 0 };
     }
 
     // Step 4: Parabolic Interpolation for sub-sample accuracy
@@ -132,9 +132,12 @@ export class YinDetector {
     const confidence = yinConfidence * volumeScalar;
 
     if (frequency >= 50 && frequency <= 4000) {
-      return { frequency, confidence };
+      const semitones = 12 * Math.log2(frequency / 440);
+      const rounded = Math.round(semitones);
+      const cents = Math.round((semitones - rounded) * 100);
+      return { frequency, confidence, cents };
     }
 
-    return { frequency: -1, confidence: 0 };
+    return { frequency: -1, confidence: 0, cents: 0 };
   }
 }

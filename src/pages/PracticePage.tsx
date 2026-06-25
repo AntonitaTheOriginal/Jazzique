@@ -13,12 +13,13 @@ interface PracticePageProps {
 }
 
 export default function PracticePage({ instrument }: PracticePageProps) {
-  const { notes, currentNote, start, stop, clearNotes } = usePitchDetection();
+  const { notes, currentNote, start, stop, clearNotes, setInstrument } = usePitchDetection();
   const [targetNote, setTargetNote] = useState<string | null>(null);
 
   useEffect(() => {
     synthService.setInstrument(instrument);
-  }, [instrument]);
+    setInstrument(instrument);
+  }, [instrument, setInstrument]);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-20 space-y-8">
@@ -37,7 +38,7 @@ export default function PracticePage({ instrument }: PracticePageProps) {
         <AudioRecorder
           onStreamReady={(input) => {
             clearNotes();
-            start(input);
+            start(input, instrument);
           }}
           onStreamStop={stop}
           onAudioReady={clearNotes}

@@ -16,6 +16,7 @@ export interface DetectedNote {
   frequency: number;
   confidence: number;
   timestamp: number;
+  cents?: number;
   duration?: number;
 }
 
@@ -63,6 +64,7 @@ export interface MusicInsight {
   scale: string;
   key: string;
   progression: string[];
+  scaleSuggestions?: string[];
   practiceTips: string[];
   improvTips: string[];
 }
