@@ -1,4 +1,3 @@
-import { frequencyToNote } from './pitchDetection';
 
 export class HmmTracker {
   private lastMidi = -1;

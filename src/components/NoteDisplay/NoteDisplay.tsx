@@ -17,7 +17,7 @@ const NOTE_COLORS: Record<string, string> = {
 
 export default function NoteDisplay({ notes, currentNote }: NoteDisplayProps) {
   const listRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackIndex, setPlaybackIndex] = useState(-1);
