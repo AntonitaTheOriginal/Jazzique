@@ -24,7 +24,7 @@ interface AnalyzePageProps {
 }
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 16 },
   show: { opacity: 1, y: 0 },
 };
 
@@ -47,11 +47,8 @@ export default function AnalyzePage({ instrument, onInstrumentChange }: AnalyzeP
   const { key, chords, insights } = useChordDetection(notes);
   const tempo = useTempoDetection(notes);
 
-  // MIDI input support
   const { devices } = useWebMidi(
-    (midiNote) => {
-      triggerNote(midiNote);
-    },
+    (midiNote) => { triggerNote(midiNote); },
     () => {}
   );
 
@@ -60,102 +57,126 @@ export default function AnalyzePage({ instrument, onInstrumentChange }: AnalyzeP
   }, [instrument, setInstrument]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 space-y-8">
-      {/* Instrument selector */}
-      <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.1 }}>
+    <div className="page-container">
+
+      {/* ── Page Header ──────────────────────────────────── */}
+      <motion.div
+        variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.3 }}
+        className="mb-8"
+      >
+        <div className="flex items-start justify-between gap-6 flex-wrap">
+          <div>
+            <p className="card-label mb-1">AI-Powered</p>
+            <h1 className="page-title">Studio Analyzer</h1>
+            <p className="mt-2 text-sm" style={{ color: '#6A6458', maxWidth: '480px' }}>
+              Record or upload audio to detect notes, chords, key signature, and tempo in real time.
+            </p>
+          </div>
+          {devices.length > 0 && (
+            <span className="self-center text-xs font-medium px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20">
+              {devices.length} MIDI device{devices.length > 1 ? 's' : ''} connected
+            </span>
+          )}
+        </div>
+      </motion.div>
+
+      {/* ── Instrument Selector ───────────────────────────── */}
+      <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.05 }} className="mb-6">
         <InstrumentSelector selected={instrument} onChange={onInstrumentChange} />
       </motion.div>
 
-      {/* Settings & Tools Panel */}
-      <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.12 }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Noise calibration */}
-        <div className="glass-card p-5 flex flex-col justify-between h-full">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-display text-sm font-semibold" style={{ color: '#E8E0D0' }}>
-                Ambient Noise Calibration
-              </h3>
-              {devices.length > 0 && (
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">
-                  MIDI connected ({devices.length})
-                </span>
-              )}
-            </div>
-            <p className="text-xs" style={{ color: '#8A8880' }}>
-              Filter out background fan or room hum. Stay quiet for 1.5 seconds during calibration. Current threshold: <span className="font-mono text-gold-light">{noiseFloor.toFixed(3)}</span>.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 mt-4">
-            <button
-              onClick={calibrate}
-              disabled={isCalibrating || !isActive}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border w-full text-center"
-              style={{
-                background: isCalibrating ? 'rgba(201,168,76,0.05)' : 'rgba(201,168,76,0.15)',
-                borderColor: isCalibrating ? 'rgba(201,168,76,0.1)' : 'rgba(201,168,76,0.3)',
-                color: '#C9A84C',
-                opacity: isActive ? 1 : 0.4,
-              }}
-            >
-              {isCalibrating ? 'Calibrating...' : 'Calibrate Mic'}
-            </button>
-          </div>
-        </div>
-
-        {/* Metronome component */}
-        <Metronome />
-      </motion.div>
-
-      {/* Two-column: recorder + note display */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.15 }}>
+      {/* ── Main Studio Dashboard: 3 columns ─────────────── */}
+      <motion.div
+        variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.1 }}
+        className="studio-grid"
+      >
+        {/* ────── LEFT COLUMN: Recording Controls ──────────── */}
+        <div className="flex flex-col gap-6">
+          {/* Microphone Recorder */}
           <AudioRecorder
-            onStreamReady={(input) => {
-              clearNotes();
-              start(input, instrument);
-            }}
+            onStreamReady={(input) => { clearNotes(); start(input, instrument); }}
             onStreamStop={stop}
             onAudioReady={clearNotes}
           />
-        </motion.div>
 
-        <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.2 }} className="space-y-6">
+          {/* Noise Calibration */}
+          <div className="glass-card">
+            <p className="card-label mb-1">Noise Calibration</p>
+            <p className="text-xs mb-3" style={{ color: '#8A8880', lineHeight: '1.5' }}>
+              Stay quiet for 1.5 s to filter ambient noise.
+              Threshold: <span className="font-mono" style={{ color: '#C9A84C' }}>{noiseFloor.toFixed(3)}</span>
+            </p>
+            <button
+              onClick={calibrate}
+              disabled={isCalibrating || !isActive}
+              className="w-full py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border text-center"
+              style={{
+                background: isCalibrating ? 'rgba(201,168,76,0.04)' : 'rgba(201,168,76,0.12)',
+                borderColor: isCalibrating ? 'rgba(201,168,76,0.08)' : 'rgba(201,168,76,0.28)',
+                color: '#C9A84C',
+                opacity: isActive ? 1 : 0.45,
+              }}
+            >
+              {isCalibrating ? 'Calibrating...' : 'Calibrate Microphone'}
+            </button>
+          </div>
+
+          {/* Metronome */}
+          <Metronome />
+        </div>
+
+        {/* ────── CENTER COLUMN: Live Analysis ─────────────── */}
+        <div className="flex flex-col gap-6">
+          {/* Note Monitor */}
           <NoteDisplay notes={notes} currentNote={currentNote} />
-          <CentsMeter cents={currentNote?.cents ?? 0} noteName={currentNote ? `${currentNote.note}${currentNote.octave}` : ''} frequency={currentNote?.frequency} />
-        </motion.div>
-      </div>
 
-      {/* Waveform */}
-      <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.25 }}>
-        <FrequencyGraph freqData={freqData} isActive={isActive} />
-      </motion.div>
+          {/* Fine Tuner */}
+          <CentsMeter
+            cents={currentNote?.cents ?? 0}
+            noteName={currentNote ? `${currentNote.note}${currentNote.octave}` : ''}
+            frequency={currentNote?.frequency}
+          />
 
-      {/* Piano */}
-      <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.3 }}>
-        <PianoVisualizer currentNote={currentNote} notes={notes} />
-      </motion.div>
+          {/* Waveform */}
+          <FrequencyGraph freqData={freqData} isActive={isActive} />
+        </div>
 
-      {/* Chord / Key / Tempo analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.35 }}>
+        {/* ────── RIGHT COLUMN: Music Intelligence ─────────── */}
+        <div className="flex flex-col gap-6">
+          {/* Chord / Key / Tempo */}
           <ChordAnalyzer chords={chords} keyResult={key} tempo={tempo} instrument={instrument} />
-        </motion.div>
 
-        <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.4 }} className="space-y-6">
+          {/* AI Insights */}
           <MusicInsightsPanel insights={insights} hasNotes={notes.length > 3} />
+
+          {/* Violin Fingering (conditional) */}
           {instrument === 'violin' && (
             <ViolinFingering currentNote={currentNote} />
           )}
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
 
-      {/* Sheet music */}
-      <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.45 }}>
+      {/* ── Full-width Piano Roll ─────────────────────────── */}
+      <motion.div
+        variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.2 }}
+        style={{ marginTop: 'var(--section-gap)' }}
+      >
+        <PianoVisualizer currentNote={currentNote} notes={notes} />
+      </motion.div>
+
+      {/* ── Sheet Music ───────────────────────────────────── */}
+      <motion.div
+        variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.25 }}
+        style={{ marginTop: 'var(--card-gap)' }}
+      >
         <SheetMusic notes={notes} instrument={instrument} />
       </motion.div>
 
-      {/* Export */}
-      <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.5 }}>
+      {/* ── Export Panel ──────────────────────────────────── */}
+      <motion.div
+        variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.3 }}
+        style={{ marginTop: 'var(--card-gap)' }}
+      >
         <ExportPanel
           notes={notes}
           instrument={instrument}
@@ -165,6 +186,7 @@ export default function AnalyzePage({ instrument, onInstrumentChange }: AnalyzeP
           duration={notes.length > 0 ? notes[notes.length - 1].timestamp : 0}
         />
       </motion.div>
+
     </div>
   );
 }

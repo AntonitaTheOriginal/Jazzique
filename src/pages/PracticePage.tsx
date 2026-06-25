@@ -12,6 +12,11 @@ interface PracticePageProps {
   instrument: Instrument;
 }
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0 },
+};
+
 export default function PracticePage({ instrument }: PracticePageProps) {
   const { notes, currentNote, start, stop, clearNotes, setInstrument } = usePitchDetection();
   const [targetNote, setTargetNote] = useState<string | null>(null);
@@ -22,33 +27,58 @@ export default function PracticePage({ instrument }: PracticePageProps) {
   }, [instrument, setInstrument]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-20 space-y-8">
+    <div className="page-container">
+
+      {/* ── Page Header ──────────────────────────────────── */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center py-8"
+        variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.3 }}
+        className="mb-8"
       >
-        <h2 className="font-display text-4xl font-bold text-gold-gradient mb-3">Practice Mode</h2>
-        <p className="text-base" style={{ color: '#6A6458' }}>
-          Match the target note by singing, humming, or playing your instrument
+        <p className="card-label mb-1">Interactive Training</p>
+        <h1 className="page-title">Practice Academy</h1>
+        <p className="mt-2 text-sm" style={{ color: '#6A6458', maxWidth: '480px' }}>
+          Match target notes by singing, humming, or playing your instrument. The piano highlights every note you hit.
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <AudioRecorder
-          onStreamReady={(input) => {
-            clearNotes();
-            start(input, instrument);
-          }}
-          onStreamStop={stop}
-          onAudioReady={clearNotes}
-        />
-        <PracticeMode currentNote={currentNote} onTargetNoteChange={setTargetNote} />
-      </div>
+      {/* ── Top Section: 3-column dashboard ─────────────── */}
+      <motion.div
+        variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.1 }}
+        className="three-col-grid"
+      >
+        {/* Column 1: Recording */}
+        <div>
+          <AudioRecorder
+            onStreamReady={(input) => { clearNotes(); start(input, instrument); }}
+            onStreamStop={stop}
+            onAudioReady={clearNotes}
+          />
+        </div>
 
-      <PianoVisualizer currentNote={currentNote} notes={notes} targetNote={targetNote} />
+        {/* Column 2: Lesson / Target Note Trainer */}
+        <div>
+          <PracticeMode currentNote={currentNote} onTargetNoteChange={setTargetNote} />
+        </div>
 
-      <NoteDisplay notes={notes} currentNote={currentNote} />
+        {/* Column 3: Live Note Monitor */}
+        <div>
+          <NoteDisplay notes={notes} currentNote={currentNote} />
+        </div>
+      </motion.div>
+
+      {/* ── Full-width Interactive Piano ──────────────────── */}
+      <motion.div
+        variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.2 }}
+        style={{ marginTop: 'var(--section-gap)' }}
+      >
+        {/* Piano section label */}
+        <div className="mb-4">
+          <p className="card-label mb-0.5">Instrument</p>
+          <h2 className="text-lg font-semibold" style={{ color: '#E8E0D0' }}>Interactive Piano Roll</h2>
+        </div>
+        <PianoVisualizer currentNote={currentNote} notes={notes} targetNote={targetNote} />
+      </motion.div>
+
     </div>
   );
 }

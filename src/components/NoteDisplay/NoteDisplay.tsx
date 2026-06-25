@@ -94,10 +94,8 @@ export default function NoteDisplay({ notes, currentNote }: NoteDisplayProps) {
     <div className="glass-card p-6 flex flex-col justify-between" style={{ minHeight: '360px' }}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-display text-sm font-bold uppercase tracking-wider text-zinc-100">
-            Detected Note Monitor
-          </h3>
-          <p className="text-[10px] uppercase tracking-widest text-zinc-500 mt-0.5">Real-Time Pitch Tracker</p>
+          <p className="card-label mb-0.5">Real-Time Pitch Tracker</p>
+          <h3 className="card-heading">Detected Notes</h3>
         </div>
         
         {/* Playback Controls */}

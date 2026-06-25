@@ -252,13 +252,12 @@ export default function AudioRecorder({ onStreamReady, onStreamStop, onAudioRead
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-display text-sm font-bold uppercase tracking-wider text-zinc-100">
-                Studio Recording deck
-              </h3>
+              <p className="card-label mb-0.5">Recording Deck</p>
+              <h3 className="card-heading">Studio Microphone</h3>
               <div className="flex items-center gap-2 mt-1">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: isRecording ? '#ef4444' : '#10B981' }} />
-                <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
-                  {isRecording ? '● Live Recording' : 'Ready · Mic connected'}
+                <span className="text-xs" style={{ color: '#6A6458' }}>
+                  {isRecording ? '● Recording in progress' : 'Ready · Microphone connected'}
                 </span>
               </div>
             </div>
@@ -312,7 +311,7 @@ export default function AudioRecorder({ onStreamReady, onStreamStop, onAudioRead
               style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <canvas ref={canvasRef} className="w-full h-full" />
               {recorder.recordingState === 'idle' && (
-                <div className="absolute text-[10px] uppercase tracking-widest text-zinc-600">INPUT SIGNAL LEVEL</div>
+                <div className="absolute text-[10px] tracking-widest" style={{ color: '#4A4840' }}>Input level</div>
               )}
             </div>
 

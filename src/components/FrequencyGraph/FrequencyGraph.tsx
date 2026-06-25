@@ -104,10 +104,8 @@ export default function FrequencyGraph({ freqData, isActive }: FrequencyGraphPro
     <div className="glass-card p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-display text-sm font-bold uppercase tracking-wider text-zinc-100">
-            Acoustic Signal Scope
-          </h3>
-          <p className="text-[10px] uppercase tracking-widest text-zinc-500 mt-0.5">Real-time time domain analyzer</p>
+          <p className="card-label mb-0.5">Real-time analyzer</p>
+          <h3 className="card-heading">Acoustic Waveform</h3>
         </div>
       </div>
 

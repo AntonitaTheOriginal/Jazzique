@@ -24,11 +24,12 @@ export default function InstrumentSelector({ selected, onChange }: InstrumentSel
     <div className="glass-card p-6">
       <div className="flex items-baseline justify-between mb-4">
         <div>
-          <h3 className="font-display text-base font-bold uppercase tracking-wider text-zinc-100">
-            Studio DSP Engine
+          <p className="card-label mb-1">DSP Engine</p>
+          <h3 className="card-heading">
+            Select Your Instrument
           </h3>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            Select an instrument to optimize frequency bandpass filters and visualizations.
+          <p className="text-xs mt-1" style={{ color: '#6A6458' }}>
+            Optimizes frequency filters and visualizations for your instrument.
           </p>
         </div>
       </div>

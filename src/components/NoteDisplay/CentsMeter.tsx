@@ -24,11 +24,12 @@ export default function CentsMeter({ cents, noteName, frequency }: CentsMeterPro
   return (
     <div className="glass-card p-6 flex flex-col items-center justify-between" style={{ minHeight: '220px' }}>
       <div className="text-center w-full flex items-baseline justify-between mb-2">
-        <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-          DSP Fine Tuner
-        </h4>
-        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-zinc-950/60 text-zinc-400 border border-white/5 uppercase">
-          Continuous Sample
+        <div>
+          <p className="card-label mb-0.5">Tuning Reference</p>
+          <h4 className="card-heading">Fine Tuner</h4>
+        </div>
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-950/60 border border-white/5" style={{ color: '#6A6458' }}>
+          Continuous
         </span>
       </div>
 

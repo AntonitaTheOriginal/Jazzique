@@ -140,12 +140,9 @@ export default function PianoVisualizer({ currentNote, notes, targetNote }: Pian
     <div className="glass-card p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="font-display text-sm font-bold uppercase tracking-wider text-zinc-100">
-            Interactive Piano Roll
-          </h3>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            Full 7-Octave Keyboard (C1 - B7) · Click keys or play using your keyboard [A-S-D-F...]
-          </p>
+          <p className="card-label mb-0.5">7 Octaves · C1–B7</p>
+          <h3 className="card-heading">Interactive Piano Roll</h3>
+          <p className="text-xs mt-0.5" style={{ color: '#6A6458' }}>Click keys or play with keyboard shortcuts [A–S–D–F...]</p>
         </div>
       </div>
 
