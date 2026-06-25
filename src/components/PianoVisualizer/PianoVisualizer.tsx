@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { synthService } from '../../services/synthService';
 import type { DetectedNote } from '../../types';
@@ -9,8 +9,8 @@ interface PianoVisualizerProps {
   targetNote?: string | null;
 }
 
-// Two octaves: C3-B4
-const OCTAVES = [3, 4];
+// 7 Octaves from C1 to B7
+const OCTAVES = [1, 2, 3, 4, 5, 6, 7];
 const WHITE_KEYS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const BLACK_KEYS: Record<string, number> = { 'C#': 1, 'D#': 2, 'F#': 4, 'G#': 5, 'A#': 6 };
 
@@ -51,6 +51,7 @@ export default function PianoVisualizer({ currentNote, notes, targetNote }: Pian
   const [playedNotes, setPlayedNotes] = useState<Set<string>>(new Set());
   const recentNotes = new Set(notes.slice(-8).map(n => `${n.note}${n.octave}`));
   const activeNote = currentNote ? `${currentNote.note}${currentNote.octave}` : null;
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const isActive = (note: string, octave: number) => {
     const key = `${note}${octave}`;
@@ -103,6 +104,17 @@ export default function PianoVisualizer({ currentNote, notes, targetNote }: Pian
     };
   }, []);
 
+  // Auto-scroll active/target note into view
+  useEffect(() => {
+    const scrollTarget = activeNote || targetNote;
+    if (scrollTarget && scrollContainerRef.current) {
+      const activeEl = scrollContainerRef.current.querySelector(`[data-note="${scrollTarget}"]`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [activeNote, targetNote]);
+
   const handleMouseDown = async (note: string, octave: number) => {
     const noteName = `${note}${octave}`;
     setPlayedNotes(prev => {
@@ -127,16 +139,18 @@ export default function PianoVisualizer({ currentNote, notes, targetNote }: Pian
   return (
     <div className="glass-card p-6">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-display text-lg font-semibold" style={{ color: '#E8E0D0' }}>
-          Piano Visualizer
-        </h3>
-        <span className="text-xs font-mono" style={{ color: '#6A6458' }}>
-          Click keys or play using your keyboard [A-S-D-F...]
-        </span>
+        <div>
+          <h3 className="font-display text-lg font-semibold" style={{ color: '#E8E0D0' }}>
+            Piano Visualizer
+          </h3>
+          <p className="text-xs" style={{ color: '#6A6458' }}>
+            Full 7-Octave Keyboard (C1 - B7) · Click keys or play using your keyboard [A-S-D-F...]
+          </p>
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="relative inline-flex" style={{ minWidth: '400px' }}>
+      <div ref={scrollContainerRef} className="overflow-x-auto pb-4 scroll-smooth">
+        <div className="relative inline-flex" style={{ minWidth: '100%' }}>
           {OCTAVES.map(octave => (
             <div key={octave} className="relative flex">
               {/* White keys */}
@@ -150,6 +164,7 @@ export default function PianoVisualizer({ currentNote, notes, targetNote }: Pian
                     key={`${note}${octave}`}
                     className="relative"
                     style={{ zIndex: 1 }}
+                    data-note={`${note}${octave}`}
                   >
                     <motion.div
                       animate={lit ? { scaleY: 1.03 } : { scaleY: 1 }}
@@ -159,8 +174,8 @@ export default function PianoVisualizer({ currentNote, notes, targetNote }: Pian
                       onMouseLeave={() => handleMouseUpOrLeave(note, octave)}
                       className="rounded-b-md cursor-pointer select-none flex flex-col items-center justify-end pb-2 relative"
                       style={{
-                        width: '36px',
-                        height: '140px',
+                        width: '30px',
+                        height: '130px',
                         background: lit
                           ? 'linear-gradient(180deg, #E8C870 0%, #C9A84C 100%)'
                           : active
@@ -177,7 +192,7 @@ export default function PianoVisualizer({ currentNote, notes, targetNote }: Pian
                           <div className="absolute top-2 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_5px_#ef4444] pointer-events-none" />
                         </>
                       )}
-                      <span className="text-xs font-mono leading-none" style={{ color: lit ? '#050507' : '#6A6458', fontSize: '10px' }}>
+                      <span className="text-xs font-mono leading-none" style={{ color: lit ? '#050507' : '#6A6458', fontSize: '9px' }}>
                         {note}{octave}
                       </span>
                       {shortcut && (
@@ -194,13 +209,13 @@ export default function PianoVisualizer({ currentNote, notes, targetNote }: Pian
               <div className="absolute top-0 left-0 flex pointer-events-none" style={{ zIndex: 2 }}>
                 {WHITE_KEYS.map((_wk, i) => {
                   const blackNote = Object.entries(BLACK_KEYS).find(([, pos]) => pos === i + 1)?.[0];
-                  if (!blackNote) return <div key={i} style={{ width: '36px' }} />;
+                  if (!blackNote) return <div key={i} style={{ width: '30px' }} />;
                   const lit = `${blackNote}${octave}` === activeNote || isPlayed(blackNote, octave);
                   const active = isActive(blackNote, octave);
                   const shortcut = getShortcutKey(blackNote, octave);
                   const target = isTarget(blackNote, octave);
                   return (
-                    <div key={i} className="relative" style={{ width: '36px' }}>
+                    <div key={i} className="relative" style={{ width: '30px' }} data-note={`${blackNote}${octave}`}>
                       <motion.div
                         animate={lit ? { scaleY: 1.04 } : { scaleY: 1 }}
                         transition={{ duration: 0.1 }}
@@ -209,9 +224,9 @@ export default function PianoVisualizer({ currentNote, notes, targetNote }: Pian
                         onMouseLeave={() => handleMouseUpOrLeave(blackNote, octave)}
                         className="absolute rounded-b-sm pointer-events-auto cursor-pointer flex flex-col items-center pt-2 relative"
                         style={{
-                          width: '22px',
-                          height: '90px',
-                          left: '22px',
+                          width: '18px',
+                          height: '84px',
+                          left: '21px',
                           top: 0,
                           background: lit
                             ? 'linear-gradient(180deg, #C9A84C, #9A7A2E)'
