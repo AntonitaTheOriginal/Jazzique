@@ -18,11 +18,23 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--black-deep);
+  background: radial-gradient(circle at 50% 50%, #0d0d15 0%, #050507 100%);
   color: #E8E0D0;
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* Premium radial dot background grid */
+body::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(rgba(201, 168, 76, 0.02) 1.5px, transparent 1.5px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .font-display { font-family: 'Playfair Display', serif; }
@@ -35,19 +47,30 @@ body {
   background-clip: text;
 }
 
+/* Enhanced Glassmorphism Card system */
 .glass-card {
-  background: rgba(255,255,255,0.03);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(201,168,76,0.15);
-  border-radius: 16px;
+  background: rgba(10, 10, 15, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(201, 168, 76, 0.28);
+  box-shadow: 0 10px 40px 0 rgba(201, 168, 76, 0.08);
 }
 
 .glow-gold { box-shadow: 0 0 30px rgba(201,168,76,0.2), 0 0 60px rgba(201,168,76,0.08); }
 .glow-gold-sm { box-shadow: 0 0 15px rgba(201,168,76,0.25); }
 
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--black-mid); }
-::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 2px; }
+/* Premium Scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: rgba(5, 5, 7, 0.5); }
+::-webkit-scrollbar-thumb { background: rgba(201, 168, 76, 0.4); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(201, 168, 76, 0.7); }
 
 canvas { display: block; }
 
@@ -59,6 +82,31 @@ canvas { display: block; }
   font-size: 0.85rem;
   padding: 4px 10px;
   color: var(--gold-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Range input styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  outline: none;
+  height: 5px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #C9A84C;
+  box-shadow: 0 0 10px #C9A84C;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
 }
 
 @keyframes pulse-gold {
