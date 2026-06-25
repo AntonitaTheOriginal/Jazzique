@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Square, Music } from 'lucide-react';
+import { Play, Pause, Square, Activity } from 'lucide-react';
 import { synthService } from '../../services/synthService';
 import type { DetectedNote } from '../../types';
 
@@ -10,10 +10,18 @@ interface NoteDisplayProps {
 }
 
 const NOTE_COLORS: Record<string, string> = {
-  C: '#C9A84C', 'C#': '#E8C870', D: '#A8D8A8', 'D#': '#7FC8A0',
-  E: '#7EC8E3', F: '#C084FC', 'F#': '#F87171', G: '#FB923C',
-  'G#': '#FBBF24', A: '#34D399', 'A#': '#60A5FA', B: '#F472B6',
+  C: '#C9A84C', 'C#': '#E8C870', D: '#38bdf8', 'D#': '#0284c7',
+  E: '#60a5fa', F: '#c084fc', 'F#': '#a855f7', G: '#fb923c',
+  'G#': '#f59e0b', A: '#34d399', 'A#': '#10b981', B: '#f472b6',
 };
+
+function getPitchRating(cents: number | undefined): { label: string; color: string } {
+  if (cents === undefined) return { label: 'In Tune', color: '#10B981' };
+  const abs = Math.abs(cents);
+  if (abs <= 5) return { label: 'Perfect', color: '#10B981' }; // Emerald Green
+  if (abs <= 15) return cents > 0 ? { label: 'Slightly Sharp', color: '#f59e0b' } : { label: 'Slightly Flat', color: '#f59e0b' }; // Orange
+  return cents > 0 ? { label: 'Too Sharp', color: '#ef4444' } : { label: 'Too Flat', color: '#ef4444' }; // Red
+}
 
 export default function NoteDisplay({ notes, currentNote }: NoteDisplayProps) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -28,16 +36,11 @@ export default function NoteDisplay({ notes, currentNote }: NoteDisplayProps) {
     }
   }, [notes, isPlaying]);
 
-  // Clean up timeouts on unmount or when notes change
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
-
-  const uniqueNotes = Array.from(new Set(notes.map(n => n.note))).slice(-8);
 
   const sortedNotes = [...notes].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -51,25 +54,18 @@ export default function NoteDisplay({ notes, currentNote }: NoteDisplayProps) {
     setPlaybackIndex(index);
     const note = sortedNotes[index];
     const nextNote = sortedNotes[index + 1];
-
-    // Estimate duration based on next note's timestamp or fallback to 0.3s
     const duration = note.duration || (nextNote ? Math.max(0.1, nextNote.timestamp - note.timestamp) : 0.3);
     synthService.playNoteWithDuration(`${note.note}${note.octave}`, duration);
 
     const delay = nextNote ? (nextNote.timestamp - note.timestamp) * 1000 : 500;
-
-    timeoutRef.current = setTimeout(() => {
-      playNext(index + 1);
-    }, delay);
+    timeoutRef.current = setTimeout(() => playNext(index + 1), delay);
   };
 
   const handlePlayPause = async () => {
     if (sortedNotes.length === 0) return;
     if (isPlaying) {
       setIsPlaying(false);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       synthService.releaseAll();
     } else {
       setIsPlaying(true);
@@ -82,9 +78,7 @@ export default function NoteDisplay({ notes, currentNote }: NoteDisplayProps) {
   const handleStop = () => {
     setIsPlaying(false);
     setPlaybackIndex(-1);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     synthService.releaseAll();
   };
 
@@ -93,160 +87,162 @@ export default function NoteDisplay({ notes, currentNote }: NoteDisplayProps) {
     synthService.playNoteWithDuration(`${note.note}${note.octave}`, 0.35);
   };
 
-  const progressPercent = sortedNotes.length > 0 && playbackIndex !== -1 
-    ? ((playbackIndex + 1) / sortedNotes.length) * 100 
-    : 0;
+  // Render Horizontal Timeline strip
+  const timelineNotes = notes.slice(-5);
 
   return (
-    <div className="glass-card p-6">
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="font-display text-lg font-semibold" style={{ color: '#E8E0D0' }}>
-          Detected Notes
-        </h3>
+    <div className="glass-card p-6 flex flex-col justify-between" style={{ minHeight: '360px' }}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="font-display text-sm font-bold uppercase tracking-wider text-zinc-100">
+            Detected Note Monitor
+          </h3>
+          <p className="text-[10px] uppercase tracking-widest text-zinc-500 mt-0.5">Real-Time Pitch Tracker</p>
+        </div>
         
         {/* Playback Controls */}
         {notes.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-zinc-950/50 p-1 rounded-xl border border-white/5">
             <button
               onClick={handlePlayPause}
-              className="p-2 rounded-lg transition-colors duration-150 cursor-pointer flex items-center justify-center hover:bg-white/5"
-              style={{ color: isPlaying ? '#E8E0D0' : '#C9A84C' }}
-              title={isPlaying ? "Pause Playback" : "Play Detected Song"}
+              className="p-2 rounded-lg transition-colors cursor-pointer text-zinc-400 hover:text-gold"
+              title={isPlaying ? "Pause Playback" : "Play Sequence"}
             >
-              {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
             </button>
-            
             <button
               onClick={handleStop}
               disabled={playbackIndex === -1}
-              className="p-2 rounded-lg transition-colors duration-150 cursor-pointer flex items-center justify-center hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ color: '#ef4444' }}
+              className="p-2 rounded-lg transition-colors cursor-pointer text-zinc-400 hover:text-red-500 disabled:opacity-20 disabled:cursor-not-allowed"
               title="Stop Playback"
             >
-              <Square size={16} />
+              <Square size={14} />
             </button>
           </div>
         )}
       </div>
 
-      {/* Playback Progress Bar */}
-      {notes.length > 0 && (playbackIndex !== -1 || isPlaying) && (
-        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mb-4">
-          <div 
-            className="h-full rounded-full transition-all duration-150" 
-            style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg, #C9A84C, #E8C870)' }}
-          />
-        </div>
-      )}
-
-      {/* Current note — big display */}
-      <div className="flex items-center justify-center mb-6">
-        <AnimatePresence mode="wait">
-          {currentNote ? (
-            <motion.div
-              key={`${currentNote.note}${currentNote.octave}`}
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 1.5, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="text-center"
-            >
-              <div className="font-display font-black text-7xl" style={{ color: NOTE_COLORS[currentNote.note] || '#C9A84C' }}>
-                {currentNote.note}
-              </div>
-              <div className="font-mono text-sm mt-1" style={{ color: '#6A6458' }}>
-                {currentNote.octave} · {Math.round(currentNote.frequency)} Hz
-              </div>
-              <div className="mt-2 flex items-center justify-center gap-2">
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ width: '80px', background: 'rgba(255,255,255,0.1)' }}>
-                  <div className="h-full rounded-full transition-all duration-300"
-                    style={{ width: `${currentNote.confidence}%`, background: 'linear-gradient(90deg, #C9A84C, #E8C870)' }} />
-                </div>
-                <span className="font-mono text-xs" style={{ color: '#9A9080' }}>{currentNote.confidence}%</span>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center"
-            >
-              <div className="font-display text-5xl font-black" style={{ color: '#2A2820' }}>—</div>
-              <div className="text-xs mt-2" style={{ color: '#3A3830' }}>
-                {isPlaying ? 'Playing song back…' : 'Listening for notes…'}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Unique notes bar */}
-      {uniqueNotes.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-5">
-          {uniqueNotes.map(note => (
-            <motion.span
-              key={note}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="note-pill"
-              style={{ color: NOTE_COLORS[note] || '#C9A84C', borderColor: (NOTE_COLORS[note] || '#C9A84C') + '44' }}
-            >
-              {note}
-            </motion.span>
-          ))}
-        </div>
-      )}
-
-      {/* Timeline */}
-      <div
-        ref={listRef}
-        className="overflow-y-auto space-y-1 pr-1"
-        style={{ maxHeight: '200px' }}
-      >
-        {notes.length === 0 ? (
-          <div className="text-center py-6 text-xs" style={{ color: '#3A3830' }}>
-            No notes detected yet — start recording or upload audio
+      {notes.length === 0 ? (
+        // Premium Empty / Onboarding State
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-zinc-950/20 rounded-2xl border border-dashed border-zinc-800">
+          <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-gold mb-3 animate-pulse">
+            <Activity size={20} />
           </div>
-        ) : (
-          [...notes].reverse().slice(0, 30).map((note, i) => {
-            const isCurrentlyPlaying = isPlaying && sortedNotes[playbackIndex]?.timestamp === note.timestamp;
-            return (
-              <motion.div
-                key={`${note.timestamp}-${i}`}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={() => playSingleNote(note)}
-                className="flex items-center justify-between px-3 py-1.5 rounded-lg cursor-pointer hover:bg-white/5 transition-colors group"
-                style={{ 
-                  background: isCurrentlyPlaying 
-                    ? 'rgba(201,168,76,0.15)' 
-                    : i === 0 && !isPlaying
-                      ? 'rgba(201,168,76,0.08)' 
-                      : 'transparent',
-                  border: isCurrentlyPlaying ? '1px solid rgba(201,168,76,0.3)' : '1px solid transparent'
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs" style={{ color: isCurrentlyPlaying ? '#C9A84C' : '#4A4840', minWidth: '40px' }}>
-                    {note.timestamp.toFixed(1)}s
-                  </span>
-                  <span className="font-mono font-bold text-sm" style={{ color: NOTE_COLORS[note.note] || '#C9A84C' }}>
-                    {note.note}{note.octave}
-                  </span>
-                  <span className="text-xs" style={{ color: '#4A4840' }}>{Math.round(note.frequency)}Hz</span>
-                  {isCurrentlyPlaying && (
-                    <Music size={12} className="text-gold-light animate-bounce" />
-                  )}
-                </div>
-                <span className="font-mono text-xs group-hover:text-gold-light transition-colors" style={{ color: '#4A4840' }}>
-                  {isCurrentlyPlaying ? 'Playing' : `${note.confidence}%`}
+          <h4 className="text-xs uppercase font-bold tracking-wider text-zinc-300">Start playing or singing</h4>
+          <p className="text-[11px] text-zinc-500 mt-2 max-w-[240px] leading-relaxed">
+            Jazzique is listening. Turn on your microphone to analyze:
+          </p>
+          <div className="flex flex-wrap justify-center gap-1.5 mt-3 max-w-[280px]">
+            {['✓ Pitch', '✓ Key signature', '✓ Chords', '✓ BPM'].map(item => (
+              <span key={item} className="text-[9px] uppercase tracking-wider font-semibold font-mono bg-zinc-950/60 px-2 py-0.5 rounded text-zinc-400 border border-white/5">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4 flex-1 flex flex-col justify-between">
+          {/* Main Grid View */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Column 1: Current Note Detail */}
+            <div className="bg-zinc-950/40 rounded-2xl p-4 border border-white/5 flex flex-col items-center justify-center min-h-[140px]">
+              <AnimatePresence mode="wait">
+                {currentNote ? (
+                  <motion.div
+                    key={`${currentNote.note}${currentNote.octave}`}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 1.1, opacity: 0 }}
+                    transition={{ duration: 0.12 }}
+                    className="text-center"
+                  >
+                    <span className="text-[10px] uppercase font-mono tracking-widest text-zinc-500 block">Current note</span>
+                    <div className="font-display font-black text-6xl text-gold-gradient leading-none mt-1">
+                      {currentNote.note}
+                      <span className="text-3xl font-light font-sans align-super opacity-60 ml-0.5">{currentNote.octave}</span>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div className="text-center text-zinc-600 font-display text-4xl font-black">—</div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Column 2: DSP Stats List */}
+            <div className="bg-zinc-950/40 rounded-2xl p-4 border border-white/5 flex flex-col justify-center space-y-2.5">
+              <div>
+                <span className="text-[9px] uppercase tracking-widest text-zinc-500 block">Detected Frequency</span>
+                <span className="text-sm font-bold font-mono text-zinc-300">
+                  {currentNote ? `${currentNote.frequency.toFixed(2)} Hz` : '-- Hz'}
                 </span>
-              </motion.div>
-            );
-          })
-        )}
-      </div>
+              </div>
+              
+              <div>
+                <span className="text-[9px] uppercase tracking-widest text-zinc-500 block">Confidence</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <div className="h-1.5 bg-zinc-900 rounded-full flex-1 overflow-hidden">
+                    <motion.div
+                      className="h-full bg-cyan-500 rounded-full"
+                      animate={{ width: currentNote ? `${currentNote.confidence}%` : '0%' }}
+                      transition={{ duration: 0.15 }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono text-zinc-400">
+                    {currentNote ? `${currentNote.confidence}%` : '0%'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[9px] uppercase tracking-widest text-zinc-500 block">Intonation rating</span>
+                {currentNote ? (
+                  (() => {
+                    const rating = getPitchRating(currentNote.cents);
+                    return (
+                      <span className="text-[10px] uppercase font-mono font-bold tracking-wider px-2 py-0.5 rounded border block w-max mt-0.5"
+                        style={{ background: rating.color + '12', borderColor: rating.color + '30', color: rating.color }}>
+                        {rating.label}
+                      </span>
+                    );
+                  })()
+                ) : (
+                  <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-zinc-600">No Signal</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Animated Horizontal Timeline Strip */}
+          <div className="bg-zinc-950/50 p-3.5 rounded-2xl border border-white/5">
+            <span className="text-[9px] uppercase tracking-widest text-zinc-500 block mb-2">Animated Timeline</span>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <AnimatePresence>
+                {timelineNotes.map((note, idx) => (
+                  <div key={`${note.timestamp}-${idx}`} className="flex items-center gap-2 flex-shrink-0">
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      onClick={() => playSingleNote(note)}
+                      className="px-3 py-1.5 rounded-xl border font-mono text-xs font-black cursor-pointer shadow-sm transition-all hover:scale-105"
+                      style={{
+                        background: 'rgba(255,255,255,0.02)',
+                        borderColor: 'rgba(201,168,76,0.15)',
+                        color: NOTE_COLORS[note.note] || '#C9A84C',
+                      }}
+                    >
+                      {note.note}{note.octave}
+                    </motion.button>
+                    {idx < timelineNotes.length - 1 && (
+                      <span className="text-zinc-700 font-bold text-sm">→</span>
+                    )}
+                  </div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

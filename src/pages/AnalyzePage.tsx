@@ -121,7 +121,7 @@ export default function AnalyzePage({ instrument, onInstrumentChange }: AnalyzeP
 
         <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.2 }} className="space-y-6">
           <NoteDisplay notes={notes} currentNote={currentNote} />
-          <CentsMeter cents={currentNote?.cents ?? 0} noteName={currentNote ? `${currentNote.note}${currentNote.octave}` : ''} />
+          <CentsMeter cents={currentNote?.cents ?? 0} noteName={currentNote ? `${currentNote.note}${currentNote.octave}` : ''} frequency={currentNote?.frequency} />
         </motion.div>
       </div>
 

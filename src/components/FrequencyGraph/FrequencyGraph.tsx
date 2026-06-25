@@ -29,13 +29,25 @@ export default function FrequencyGraph({ freqData, isActive }: FrequencyGraphPro
 
       ctx.clearRect(0, 0, W, H);
 
-      // Grid lines
-      ctx.strokeStyle = 'rgba(201,168,76,0.06)';
+      // Draw Grid Lines (DAW style)
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
       ctx.lineWidth = 1;
-      for (let i = 1; i < 4; i++) {
+      
+      // Vertical grid lines
+      const verticalLines = 10;
+      for (let i = 1; i < verticalLines; i++) {
         ctx.beginPath();
-        ctx.moveTo(0, (H / 4) * i);
-        ctx.lineTo(W, (H / 4) * i);
+        ctx.moveTo((W / verticalLines) * i, 0);
+        ctx.lineTo((W / verticalLines) * i, H);
+        ctx.stroke();
+      }
+
+      // Horizontal grid lines
+      const horizontalLines = 4;
+      for (let i = 1; i < horizontalLines; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, (H / horizontalLines) * i);
+        ctx.lineTo(W, (H / horizontalLines) * i);
         ctx.stroke();
       }
 
@@ -43,7 +55,7 @@ export default function FrequencyGraph({ freqData, isActive }: FrequencyGraphPro
       if (!data || !isActive) {
         // Flatline
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(201,168,76,0.2)';
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.2)'; // Cyan
         ctx.lineWidth = 2 * window.devicePixelRatio;
         ctx.moveTo(0, H / 2);
         ctx.lineTo(W, H / 2);
@@ -51,14 +63,15 @@ export default function FrequencyGraph({ freqData, isActive }: FrequencyGraphPro
         return;
       }
 
-      // Waveform
+      // Draw dynamic Waveform
       ctx.beginPath();
       const gradient = ctx.createLinearGradient(0, 0, W, 0);
-      gradient.addColorStop(0, 'rgba(201,168,76,0.3)');
-      gradient.addColorStop(0.5, '#C9A84C');
-      gradient.addColorStop(1, 'rgba(201,168,76,0.3)');
+      gradient.addColorStop(0, 'rgba(6, 182, 212, 0.4)');
+      gradient.addColorStop(0.5, '#06b6d4'); // Cyan accent
+      gradient.addColorStop(1, 'rgba(6, 182, 212, 0.4)');
+      
       ctx.strokeStyle = gradient;
-      ctx.lineWidth = 2 * window.devicePixelRatio;
+      ctx.lineWidth = 2.5 * window.devicePixelRatio;
 
       const sliceWidth = W / data.length;
       let x = 0;
@@ -71,13 +84,14 @@ export default function FrequencyGraph({ freqData, isActive }: FrequencyGraphPro
       }
       ctx.stroke();
 
-      // Fill under
-      ctx.lineTo(W, H / 2);
-      ctx.lineTo(0, H / 2);
+      // Translucent cyan fill under graph
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
       ctx.closePath();
+      
       const fillGrad = ctx.createLinearGradient(0, 0, 0, H);
-      fillGrad.addColorStop(0, 'rgba(201,168,76,0.08)');
-      fillGrad.addColorStop(1, 'rgba(201,168,76,0)');
+      fillGrad.addColorStop(0, 'rgba(6, 182, 212, 0.1)');
+      fillGrad.addColorStop(1, 'rgba(6, 182, 212, 0)');
       ctx.fillStyle = fillGrad;
       ctx.fill();
     };
@@ -88,16 +102,23 @@ export default function FrequencyGraph({ freqData, isActive }: FrequencyGraphPro
 
   return (
     <div className="glass-card p-6">
-      <h3 className="font-display text-lg font-semibold mb-5" style={{ color: '#E8E0D0' }}>
-        Waveform
-      </h3>
-      <div className="rounded-xl overflow-hidden" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.04)', height: '120px' }}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="font-display text-sm font-bold uppercase tracking-wider text-zinc-100">
+            Acoustic Signal Scope
+          </h3>
+          <p className="text-[10px] uppercase tracking-widest text-zinc-500 mt-0.5">Real-time time domain analyzer</p>
+        </div>
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.04)', height: '120px' }}>
         <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
       </div>
-      <div className="flex justify-between mt-2 text-xs font-mono" style={{ color: '#3A3830' }}>
-        <span>0 Hz</span>
-        <span>Amplitude</span>
-        <span>Nyquist</span>
+      
+      <div className="flex justify-between mt-2.5 text-[9px] font-mono uppercase tracking-widest text-zinc-500">
+        <span>0 ms</span>
+        <span>Acoustic Waveform Amplitude</span>
+        <span>250 ms</span>
       </div>
     </div>
   );

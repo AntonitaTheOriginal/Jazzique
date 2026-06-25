@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2, Upload, RotateCcw } from 'lucide-react';
+import { Volume2, Upload, RotateCcw, Award, Flame, Star } from 'lucide-react';
 import { noteToFrequency } from '../../services/pitchDetection';
 import { synthService } from '../../services/synthService';
 import type { DetectedNote } from '../../types';
@@ -19,7 +19,7 @@ export default function PracticeMode({ currentNote, onTargetNoteChange }: Practi
   const [streak, setStreak] = useState(0);
   const [feedback, setFeedback] = useState('');
   
-  // HOLD timer states (for timing and gating stability)
+  // HOLD timer states
   const [holdProgress, setHoldProgress] = useState(0); // 0 to 100%
   const [totalScore, setTotalScore] = useState(0);
   const lastActiveTimeRef = useRef<number>(0);
@@ -30,7 +30,14 @@ export default function PracticeMode({ currentNote, onTargetNoteChange }: Practi
   const targetNoteName = targetNote.slice(0, -1);
   const targetOctave = parseInt(targetNote.slice(-1)) || 4;
 
-  // Notify parent of target note changes
+  // Determine user level based on score
+  const getLevel = (score: number) => {
+    if (score < 500) return 'Novice';
+    if (score < 1500) return 'Intermediate';
+    if (score < 3000) return 'Advanced';
+    return 'Maestro';
+  };
+
   useEffect(() => {
     onTargetNoteChange?.(targetNote);
     return () => onTargetNoteChange?.(null);
@@ -38,7 +45,6 @@ export default function PracticeMode({ currentNote, onTargetNoteChange }: Practi
 
   useEffect(() => {
     if (!currentNote) {
-      // Decay hold progress slowly if no note is detected
       const decay = setInterval(() => {
         setHoldProgress((p) => Math.max(0, p - 8));
       }, 100);
@@ -53,21 +59,18 @@ export default function PracticeMode({ currentNote, onTargetNoteChange }: Practi
     setAccuracy(acc);
 
     const now = performance.now();
-    const isMatched = acc >= 80; // 80% accuracy threshold
+    const isMatched = acc >= 80;
 
     if (isMatched) {
-      setFeedback('✓ Perfect! Hold it...');
+      setFeedback('✓ Target Match! Hold tone...');
       
-      // Accumulate hold duration
       setHoldProgress((prev) => {
-        const next = prev + 12; // about 1 second of holding
+        const next = prev + 12;
         if (next >= 100) {
-          // Note completed!
           setStreak((s) => s + 1);
           setTotalScore((prevScore) => prevScore + acc);
           setFeedback('✓ Completed!');
 
-          // Move to next note
           setTimeout(() => {
             setTargetIdx((i) => (i + 1) % songNotes.length);
             setAccuracy(null);
@@ -81,9 +84,9 @@ export default function PracticeMode({ currentNote, onTargetNoteChange }: Practi
     } else {
       setHoldProgress((p) => Math.max(0, p - 6));
       if (centsDiff > 0) {
-        setFeedback('↓ Too sharp');
+        setFeedback('↓ Flat (pitch too high)');
       } else {
-        setFeedback('↑ Too flat');
+        setFeedback('↑ Sharp (pitch too low)');
       }
     }
     lastActiveTimeRef.current = now;
@@ -103,12 +106,12 @@ export default function PracticeMode({ currentNote, onTargetNoteChange }: Practi
           setStreak(0);
           setTotalScore(0);
           setHoldProgress(0);
-          setFeedback('Custom song loaded!');
+          setFeedback('Lesson loaded!');
         } else {
-          alert('Invalid format. Please upload a JSON array of strings e.g. ["C4", "E4", "G4"]');
+          alert('Invalid format. JSON array of strings expected.');
         }
       } catch (err) {
-        alert('Error parsing JSON file');
+        alert('Error parsing file');
       }
     };
     reader.readAsText(file);
@@ -124,121 +127,125 @@ export default function PracticeMode({ currentNote, onTargetNoteChange }: Practi
     setSongNotes(DEFAULT_PRACTICE_NOTES);
   };
 
-  const accuracyColor = accuracy === null ? '#6A6458' : accuracy >= 80 ? '#34D399' : accuracy >= 55 ? '#FBBF24' : '#ef4444';
+  const accuracyColor = accuracy === null ? '#6A6458' : accuracy >= 80 ? '#10b981' : accuracy >= 55 ? '#f59e0b' : '#ef4444';
 
   return (
-    <div className="glass-card p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="glass-card p-6 flex flex-col justify-between" style={{ minHeight: '360px' }}>
+      {/* Header & Gamified stats */}
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-display text-lg font-semibold" style={{ color: '#E8E0D0' }}>
-            🎯 Practice & Timing Trainer
+          <h3 className="font-display text-sm font-bold uppercase tracking-wider text-zinc-100">
+            Practice Academy
           </h3>
-          <p className="text-xs" style={{ color: '#6A6458' }}>
-            Score: <span className="text-gold-light font-bold font-mono text-sm">{totalScore}</span> points
-          </p>
+          <p className="text-[10px] uppercase tracking-widest text-zinc-500 mt-0.5">Lesson Trainer</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-mono"
-            style={{ background: 'rgba(201,168,76,0.1)', color: '#C9A84C' }}>
-            🔥 {streak} Streak
-          </span>
+        
+        {/* Streak, Score, Level Badges */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono bg-orange-500/10 text-orange-400 border border-orange-500/20" title="Daily Streak">
+            <Flame size={12} className="fill-current" />
+            <span>{streak}</span>
+          </div>
+
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" title="Score">
+            <Star size={12} className="fill-current" />
+            <span>{totalScore}</span>
+          </div>
+
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title="Level">
+            <Award size={12} />
+            <span>{getLevel(totalScore)}</span>
+          </div>
         </div>
       </div>
 
-      {/* Target note */}
-      <div className="text-center p-6 rounded-xl relative overflow-hidden" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.03)' }}>
-        {/* Hold progress bar background overlay */}
-        <div
+      {/* Target Note Block */}
+      <div className="relative text-center p-4 rounded-2xl bg-zinc-950/40 border border-white/5 overflow-hidden">
+        {/* Tone hold timer bar */}
+        <div 
           className="absolute bottom-0 left-0 h-1 transition-all duration-75"
           style={{ width: `${holdProgress}%`, background: 'linear-gradient(90deg, #C9A84C, #E8C870)', boxShadow: '0 0 10px #C9A84C' }}
         />
 
-        <div className="text-xs uppercase tracking-widest mb-3" style={{ color: '#6A6458' }}>Sing/play and hold this note</div>
-        <div className="font-display font-black text-7xl text-gold-gradient flex items-center justify-center gap-4">
+        <span className="text-[9px] uppercase tracking-widest text-zinc-500 block mb-1">Play reference target note</span>
+        <div className="font-display font-black text-6xl text-gold-gradient flex items-center justify-center gap-3 leading-none">
           <span>{targetNoteName}</span>
           <button
             onClick={async () => {
               await synthService.init();
               synthService.playNote(targetNote);
             }}
-            className="p-3 rounded-full hover:bg-white/10 transition-colors text-gold-light cursor-pointer"
-            title="Hear Reference Note"
+            className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-gold-light hover:bg-zinc-800 transition-all cursor-pointer"
+            title="Play Tone"
           >
-            <Volume2 size={24} />
+            <Volume2 size={16} />
           </button>
         </div>
-        <div className="text-sm mt-1 font-mono" style={{ color: '#6A6458' }}>
+        <span className="text-[10px] font-mono text-zinc-600 block mt-2">
           Octave {targetOctave} · {Math.round(noteToFrequency(targetNoteName, targetOctave))} Hz
-        </div>
+        </span>
       </div>
 
-      {/* Accuracy meter */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-xs">
-          <span style={{ color: '#6A6458' }}>Intonation Accuracy</span>
+      {/* Accuracy strip */}
+      <div className="space-y-1.5">
+        <div className="flex justify-between text-[10px] uppercase tracking-wider font-semibold">
+          <span className="text-zinc-500">Pitch Accuracy</span>
           <AnimatePresence mode="wait">
             <motion.span
               key={feedback}
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               style={{ color: accuracyColor }}
             >
-              {feedback || 'Play the note to begin...'}
+              {feedback || 'Ready for note signal...'}
             </motion.span>
           </AnimatePresence>
         </div>
 
-        <div className="h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div className="h-2 rounded-full overflow-hidden bg-zinc-950/50">
           <motion.div
             className="h-full rounded-full"
             animate={{ width: `${accuracy ?? 0}%` }}
-            style={{ background: `linear-gradient(90deg, ${accuracyColor}, ${accuracyColor}AA)` }}
+            style={{ background: accuracyColor }}
             transition={{ duration: 0.15 }}
           />
         </div>
-
-        <div className="text-center">
-          <span className="font-mono text-2xl font-bold" style={{ color: accuracyColor }}>
-            {accuracy !== null ? `${accuracy}%` : '—'}
-          </span>
-        </div>
       </div>
 
-      {/* Progress timeline */}
+      {/* Progress track */}
       <div>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           {songNotes.map((_note, i) => (
             <div
               key={i}
-              className="flex-1 h-1.5 rounded-full"
+              className="flex-1 h-1 rounded-full transition-all"
               style={{
-                background: i < targetIdx ? '#C9A84C' : i === targetIdx ? 'rgba(201,168,76,0.4)' : 'rgba(255,255,255,0.06)',
+                background: i < targetIdx ? '#C9A84C' : i === targetIdx ? 'rgba(201,168,76,0.35)' : 'rgba(255,255,255,0.04)',
               }}
             />
           ))}
         </div>
-        <div className="text-xs mt-2 text-center" style={{ color: '#4A4840' }}>
+        <div className="text-[10px] uppercase tracking-widest text-zinc-600 mt-2 text-center">
           Note {targetIdx + 1} of {songNotes.length}
         </div>
       </div>
 
-      {/* Practice Tools Footer */}
+      {/* Control panel buttons */}
       <div className="flex items-center gap-3 pt-3 border-t border-white/5">
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border cursor-pointer"
-          style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(201,168,76,0.2)', color: '#C9A84C' }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider border cursor-pointer bg-zinc-950/20"
+          style={{ borderColor: 'rgba(201,168,76,0.15)', color: '#C9A84C' }}
         >
-          <Upload size={14} />
-          Import JSON Song
+          <Upload size={13} />
+          Load Lesson JSON
         </button>
         <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileUpload} />
 
         <button
           onClick={handleReset}
-          className="p-2.5 rounded-xl border flex items-center justify-center cursor-pointer"
-          style={{ background: 'rgba(239,68,68,0.05)', borderColor: 'rgba(239,68,68,0.2)', color: '#EF4444' }}
+          className="p-2.5 rounded-xl border flex items-center justify-center cursor-pointer bg-zinc-950/20"
+          style={{ borderColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}
           title="Reset Lesson"
         >
           <RotateCcw size={14} />
